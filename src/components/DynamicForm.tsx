@@ -1,16 +1,11 @@
-import { useState, ChangeEvent, FormEvent } from "react";
+import { useForm, Controller } from "react-hook-form";
 import Select, { SingleValue } from "react-select";
-import { FormData, InputField } from "../interfaces";
 import countryList from "react-select-country-list";
-
-//
 import PhoneInput from "react-phone-input-2";
 import "react-phone-input-2/lib/style.css";
-import { Flex, Image } from "@chakra-ui/react";
-//
-
-//chakra UI components
 import {
+  Flex,
+  Image,
   Button,
   FormControl,
   FormLabel,
@@ -20,46 +15,42 @@ import {
   useColorModeValue,
   Select as ChakraSelect,
 } from "@chakra-ui/react";
-
-//
+import { FormData, InputField } from "../interfaces";
 
 interface IProps {
   formData: FormData;
 }
 
-type OptionType = {
+type FormValues = {
+  [key: string]: string | boolean | number;
+};
+
+type CountryOption = {
   label: string;
   value: string;
 };
 
-type FormState = {
-  [key: string]: string | boolean | number;
-};
-
 const DynamicForm = ({ formData }: IProps) => {
-  const [formState, setFormState] = useState<FormState>({});
-  const [phone, setPhone] = useState("");
+  const {
+    handleSubmit,
+    control,
+    register,
+    formState: { errors },
+  } = useForm<FormValues>({
+    defaultValues: {
+      phone: "",
+    },
+  });
 
-  const handleChange = (
-    e: ChangeEvent<HTMLInputElement | HTMLSelectElement>
-  ) => {
-    const { name, value } = e.target;
-    setFormState((prevState) => ({ ...prevState, [name]: value }));
+  const onSubmit = (data: FormValues) => {
+    console.log("Form Submitted:", data);
   };
 
   const handleSelectChange = (
     name: string,
-    newValue: SingleValue<OptionType>
+    value: SingleValue<CountryOption>
   ) => {
-    setFormState((prevState) => ({
-      ...prevState,
-      [name]: newValue ? newValue.label : "",
-    }));
-  };
-
-  const handleSubmit = (e: FormEvent) => {
-    e.preventDefault();
-    console.log("Form Submitted:", formState);
+    console.log(`Selected ${name}:`, value);
   };
 
   const renderInput = (input: InputField) => {
@@ -67,40 +58,53 @@ const DynamicForm = ({ formData }: IProps) => {
       case "text":
       case "email":
         return (
-          <FormControl key={input._id} isRequired>
+          <FormControl key={input._id} isRequired={input.required}>
             <FormLabel>{input.label}</FormLabel>
             <Input
               type={input.type}
-              name={input.name}
               placeholder={input.placeholder}
-              required={input.required}
-              onChange={handleChange}
+              {...register(input.name, { required: input.required })}
             />
+            {errors[input.name] && (
+              <span style={{ color: "red" }}>{input.label} is required.</span>
+            )}
           </FormControl>
         );
       case "phone":
         return (
-          <FormControl key={input._id} isRequired>
+          <FormControl key={input._id} isRequired={input.required}>
             <FormLabel>{input.label}</FormLabel>
-            <PhoneInput
-              country={"eg"}
-              value={phone}
-              onChange={(phone) => setPhone(phone)}
-              enableSearch={true}
-              inputStyle={{ width: "100%" }}
-              containerStyle={{ marginBottom: "10px" }}
+            <Controller
+              name={input.name}
+              control={control}
+              rules={{ required: `${input.label} is required` }}
+              render={({ field }) => (
+                <>
+                  <PhoneInput
+                    {...field}
+                    country={"eg"}
+                    enableSearch={true}
+                    inputStyle={{ width: "100%" }}
+                    containerStyle={{ marginBottom: "10px" }}
+                    onChange={(phone) => field.onChange(phone)}
+                    value={typeof field.value === "string" ? field.value : ""}
+                  />
+                  {errors[input.name] && (
+                    <span style={{ color: "red" }}>
+                      {errors[input.name]?.message?.toString()}
+                    </span>
+                  )}
+                </>
+              )}
             />
           </FormControl>
         );
-
       case "select":
         return (
-          <FormControl key={input._id} isRequired>
+          <FormControl key={input._id} isRequired={input.required}>
             <FormLabel>{input.label}</FormLabel>
             <ChakraSelect
-              name={input.name}
-              required={input.required}
-              onChange={handleChange}
+              {...register(input.name, { required: input.required })}
             >
               <option value="">Select an option</option>
               {input.options.map((option: string, index: number) => (
@@ -109,28 +113,36 @@ const DynamicForm = ({ formData }: IProps) => {
                 </option>
               ))}
             </ChakraSelect>
+            {errors[input.name] && (
+              <span style={{ color: "red" }}>{input.label} is required.</span>
+            )}
           </FormControl>
         );
       case "checkbox":
         return (
-          <FormControl key={input._id} isRequired display={"flex"}>
+          <FormControl
+            key={input._id}
+            isRequired={input.required}
+            display={"flex"}
+          >
             <FormLabel>{input.label}</FormLabel>
             <input
               type="checkbox"
-              name={input.name}
-              required={input.required}
-              onChange={(e) =>
-                setFormState((prevState) => ({
-                  ...prevState,
-                  [input.name]: e.target.checked,
-                }))
-              }
+              {...register(input.name, { required: input.required })}
             />
+            {errors[input.name] && (
+              <span style={{ color: "red" }}>{input.label} is required.</span>
+            )}
           </FormControl>
         );
       case "radio":
         return (
-          <FormControl key={input._id} isRequired display={"flex"}>
+          <FormControl
+            key={input._id}
+            isRequired={input.required}
+            display={"flex"}
+            style={{ flexWrap: "wrap" }}
+          >
             <FormLabel>{input.label}</FormLabel>
             {input.options.map((option: string, index: number) => (
               <div
@@ -139,25 +151,45 @@ const DynamicForm = ({ formData }: IProps) => {
               >
                 <input
                   type="radio"
-                  name={input.name}
                   value={option}
-                  required={input.required}
-                  onChange={handleChange}
+                  {...register(input.name, { required: input.required })}
                 />
                 {option}
               </div>
             ))}
+            {errors[input.name] && (
+              <span style={{ color: "red" }}>{input.label} is required.</span>
+            )}
           </FormControl>
         );
       case "country":
         return (
-          <Select
-            key={input._id}
-            options={countryList().getData()}
-            name={input.name}
-            onChange={(newValue) => handleSelectChange(input.name, newValue)}
-            isClearable
-          />
+          <FormControl key={input._id} isRequired={input.required}>
+            <FormLabel>{input.label}</FormLabel>
+            <Controller
+              name={input.name}
+              control={control}
+              render={({ field }) => (
+                <>
+                  <Select
+                    key={input._id}
+                    options={countryList().getData()}
+                    name={input.name}
+                    onChange={(newValue) => {
+                      field.onChange(newValue);
+                      handleSelectChange(input.name, newValue);
+                    }}
+                    isClearable
+                  />
+                  {errors[input.name] && (
+                    <span style={{ color: "red" }}>
+                      {input.label} is required.
+                    </span>
+                  )}
+                </>
+              )}
+            />
+          </FormControl>
         );
       default:
         return null;
@@ -167,7 +199,7 @@ const DynamicForm = ({ formData }: IProps) => {
   return (
     <Flex
       as="form"
-      onSubmit={handleSubmit}
+      onSubmit={handleSubmit(onSubmit)}
       minH={"100vh"}
       align={"center"}
       justify={"center"}
@@ -218,29 +250,5 @@ const DynamicForm = ({ formData }: IProps) => {
     </Flex>
   );
 };
-
-/*
-<form onSubmit={handleSubmit} style={{ maxWidth: '600px', margin: '0 auto', textAlign: 'center', background: formData.color_scheme.primary }}>
-      <img src={formData.banner} alt="Banner" style={{ width: '100%' }} />
-      <h1 style={{ fontFamily: formData.font, color: formData.color_scheme.secondary }}>{formData.title}</h1>
-      {formData.inputs.map((input) => (
-        <div key={input._id} style={{ margin: '10px 0' }}>
-          <label style={{ fontFamily: formData.font }}>{input.label}</label>
-          {renderInput(input)}
-        </div>
-      ))}
-      <button type="submit" style={{ backgroundColor: formData.color_scheme.tertiary }}>
-        Register
-      </button>
-    </form>
-
-
-
-    <Input
-          placeholder="UserName"
-          _placeholder={{ color: 'gray.500' }}
-          type="text"
-        />
-*/
 
 export default DynamicForm;
