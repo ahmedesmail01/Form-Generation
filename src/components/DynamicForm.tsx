@@ -19,12 +19,11 @@ import {
 } from "@chakra-ui/react";
 import { FormData, InputField } from "../interfaces";
 import { createZodSchema } from "../utils/createZodSchema";
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 
 interface IProps {
   formData: FormData;
 }
-type FormValues = z.infer<typeof schema>;
 
 type CountryOption = {
   label: string;
@@ -36,6 +35,8 @@ const DynamicForm = ({ formData }: IProps) => {
     () => createZodSchema(formData.inputs),
     [formData.inputs]
   );
+
+  type FormValues = z.infer<typeof schema>;
 
   const {
     handleSubmit,
@@ -51,8 +52,22 @@ const DynamicForm = ({ formData }: IProps) => {
     }, {} as FormValues),
   });
 
+  const [phoneLength, setPhoneLength] = useState<number>(0);
+
   const onSubmit = (data: FormValues) => {
+    console.log({ phone: phoneLength });
+    if (phoneLength < 5) {
+      console.log("Phone number is too short");
+      return;
+    }
+
+    if (!isValid || phoneLength <= 4) {
+      console.log("Form is invalid or phone number is too short");
+      return;
+    }
     console.log("Form Submitted:", data);
+    // Add your React Query hook call here, e.g.:
+    // useReactQueryMutation.mutate(data);
   };
 
   const handleSelectChange = (
@@ -80,7 +95,7 @@ const DynamicForm = ({ formData }: IProps) => {
             />
             {errors[input.name] && (
               <span style={{ color: "red" }}>
-                {errors[input.name]?.message}
+                {String(errors[input.name]?.message)}
               </span>
             )}
           </FormControl>
@@ -105,7 +120,10 @@ const DynamicForm = ({ formData }: IProps) => {
                     enableSearch={true}
                     inputStyle={{ width: "100%" }}
                     containerStyle={{ marginBottom: "10px" }}
-                    onChange={(phone) => field.onChange(phone)}
+                    onChange={(phone) => {
+                      setPhoneLength(phone.length);
+                      field.onChange(phone);
+                    }}
                     value={typeof field.value === "string" ? field.value : ""}
                   />
                   {errors[input.name] && (
@@ -137,7 +155,7 @@ const DynamicForm = ({ formData }: IProps) => {
             </ChakraSelect>
             {errors[input.name] && (
               <span style={{ color: "red" }}>
-                {errors[input.name]?.message}
+                {String(errors[input.name]?.message)}
               </span>
             )}
           </FormControl>
@@ -164,7 +182,7 @@ const DynamicForm = ({ formData }: IProps) => {
             </FormLabel>
             {errors[input.name] && (
               <span style={{ color: "red" }}>
-                {errors[input.name]?.message}
+                {String(errors[input.name]?.message)}
               </span>
             )}
           </FormControl>
@@ -186,7 +204,7 @@ const DynamicForm = ({ formData }: IProps) => {
             ))}
             {errors[input.name] && (
               <span style={{ color: "red" }}>
-                {errors[input.name]?.message}
+                {String(errors[input.name]?.message)}
               </span>
             )}
           </FormControl>
@@ -285,7 +303,7 @@ const DynamicForm = ({ formData }: IProps) => {
             _hover={{
               bg: "blue.500",
             }}
-            disabled={!isValid} // Disable the button if the form is not valid
+            disabled={!isValid || phoneLength <= 4} // Disable button if phone number is too short
           >
             Submit
           </Button>

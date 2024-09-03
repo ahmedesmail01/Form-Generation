@@ -1,8 +1,11 @@
-import { z, ZodTypeAny } from "zod";
+import { z, ZodTypeAny, ZodObject } from "zod";
 import { InputField } from "../interfaces";
 
-export const createZodSchema = (inputs: InputField[]): z.ZodObject<any> => {
-  const shape: { [key: string]: ZodTypeAny } = {};
+// Updated type for the shape object
+type ZodShape = { [key: string]: ZodTypeAny };
+
+export const createZodSchema = (inputs: InputField[]): ZodObject<ZodShape> => {
+  const shape: ZodShape = {};
 
   inputs.forEach((input) => {
     let schema: ZodTypeAny;
@@ -11,35 +14,47 @@ export const createZodSchema = (inputs: InputField[]): z.ZodObject<any> => {
       case "text":
         schema = z.string();
         if (input.required) {
-          schema = schema.nonempty({ message: `${input.label} is required` });
+          schema = (schema as z.ZodString).min(1, {
+            message: `${input.label} is required`,
+          });
         } else {
           schema = schema.optional();
         }
         break;
+
       case "email":
         schema = z.string().email({ message: "Invalid email address" });
         if (input.required) {
-          schema = schema.nonempty({ message: `${input.label} is required` });
+          schema = (schema as z.ZodString).min(1, {
+            message: `${input.label} is required`,
+          });
         } else {
           schema = schema.optional();
         }
         break;
+
       case "phone":
         schema = z.string().min(5, { message: "Enter complete phone" });
         if (input.required) {
-          schema = schema.nonempty({ message: `${input.label} is required` });
+          schema = (schema as z.ZodString).min(5, {
+            message: `${input.label} is required`,
+          });
         } else {
           schema = schema.optional();
         }
         break;
+
       case "select":
         schema = z.string();
         if (input.required) {
-          schema = schema.nonempty({ message: `${input.label} is required` });
+          schema = (schema as z.ZodString).min(1, {
+            message: `${input.label} is required`,
+          });
         } else {
           schema = schema.optional();
         }
         break;
+
       case "checkbox":
         schema = z.boolean();
         if (input.required) {
@@ -50,22 +65,29 @@ export const createZodSchema = (inputs: InputField[]): z.ZodObject<any> => {
           schema = schema.optional();
         }
         break;
+
       case "radio":
         schema = z.string();
         if (input.required) {
-          schema = schema.nonempty({ message: `${input.label} is required` });
+          schema = (schema as z.ZodString).min(1, {
+            message: `${input.label} is required`,
+          });
         } else {
           schema = schema.optional();
         }
         break;
+
       case "country":
         schema = z.string();
         if (input.required) {
-          schema = schema.nonempty({ message: `${input.label} is required` });
+          schema = (schema as z.ZodString).min(1, {
+            message: `${input.label} is required`,
+          });
         } else {
           schema = schema.optional();
         }
         break;
+
       default:
         schema = z.any();
     }
